@@ -1,0 +1,88 @@
+---
+title: "copy_the_masters_final_draft"
+author: "Gabbie Bolcer"
+date: "12/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(fivethirtyeight)
+library(tidyr)
+library(tidyverse)
+library(ggplot2)
+library(fivethirtyeight)
+library(ggthemes)
+
+```
+My graphic comes from [The Media Really Has Neglected Puerto Rico](https://fivethirtyeight.com/features/the-media-really-has-neglected-puerto-rico/). 
+
+```{r}
+
+library(readr)
+hurricane_data <- read_csv("hurricane_data.csv", 
+    col_types = cols(hurricane_irma = col_integer(), 
+        hurricane_maria = col_integer(), 
+        hurricane_harvey = col_integer()))
+
+hurricane_data
+
+```
+
+
+```{r}
+better <- hurricane_data %>% 
+  select(Day, hurricane_harvey, hurricane_irma, hurricane_maria) %>%
+  pivot_longer(!Day, names_to = "hurricane_name", values_to = "count")
+
+
+# https://stackoverflow.com/a/8166616 there were a bunch of <1s in the data which got loaded as NAs, this answer helped me switch the NAs to 0s
+d <- as.data.frame(better)
+d[is.na(d)] <- 0
+
+
+# https://stackoverflow.com/a/33398332 this saved me
+graph <- ggplot(d, 
+                aes(x = order(Day), 
+                    y = count, 
+                    group = hurricane_name, 
+                    fill = hurricane_name, 
+                    color = hurricane_name)) +
+  geom_area(position = "stack") + 
+  ggtitle("Google search trends in the U.S. (excluding Puerto Rico)") + 
+  annotate("text", 
+            x = 16, 
+            y = 47, 
+            label = "Harvey", 
+            fontface = 2) + 
+  annotate("text", 
+           x = 92, 
+           y = 97, 
+           label = "Irma", 
+           fontface = 2) + 
+  annotate("text", 
+           x = 113, 
+           y = 26, 
+           label = "Maria", 
+           fontface = 2) +
+  scale_fill_manual(values = c("#F36B20", "#F53792", "#54D0DE")) + 
+  scale_color_manual(values = c("#F36B20", "#F53792", "#54D0DE")) +
+  scale_x_continuous(name = "date", 
+                     breaks = c(0, 25, 50, 75, 100, 125), 
+                     labels = c("AUG. 20, 2017","AUG. 27", "SEPT. 3", "SEPT. 10", "SEPT. 17", "SEPT. 24")) +
+  scale_y_continuous(breaks = c(0, 20, 40, 60, 80, 100), 
+                     labels = c("0", " ", " ", " ", " ", "MAX")) + 
+  theme_fivethirtyeight(base_size = 12, base_family = "sans") + 
+  theme(
+        legend.position = "none",
+        axis.text.y = element_text(colour = "#9A9797"),
+        axis.text.x = element_text(colour = "#9A9797"),
+        plot.caption = element_text(colour = "#9A9797", size = 8),
+        plot.title = element_text(size = 16)
+        ) +
+  labs(caption = "\n\nFiveThirtyEight                                                                                                                                        SOURCE: GOOGLE TRENDS") # last part was with help from https://stackoverflow.com/a/45409325
+graph
+ 
+
+```
